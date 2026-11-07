@@ -14,7 +14,7 @@ class CustomAuthToken(ObtainAuthToken):
       user_obj = User.objects.get(username=username)
     except User.DoesNotExist:
       return Response(
-          {'status': 'denied', 'message': 'Неверный логин'}, status=400
+          {'status': 'denied', 'message': 'Неверный логин bkb'}, status=403
       )
 
     if not user_obj.is_active:
@@ -60,7 +60,7 @@ class CustomAuthToken(ObtainAuthToken):
                   f'Неверный пароль. Осталось попыток: {attempts_left}'
               ),
           },
-          status=400,
+          status=403,
       )
 
     profile.failed_attempts = 0
