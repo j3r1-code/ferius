@@ -3,7 +3,25 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
+from django.contrib.auth.views import LoginView
 
+from django.contrib.auth.views import LoginView
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required(login_url='/login/')
+def profile_view(request):
+    return render(request, 'auth_app/profile.html')
+
+
+class CustomLoginView(LoginView):
+    template_name = 'auth_app/login.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('/')
+        return super().dispatch(request, *args, **kwargs)
 
 class CustomAuthToken(ObtainAuthToken):
 
