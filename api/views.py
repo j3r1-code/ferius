@@ -4,11 +4,11 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from django.contrib.auth.views import LoginView
-
-from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.contrib import messages
+
 
 @login_required(login_url='/login/')
 def profile_view(request):
@@ -22,6 +22,9 @@ class CustomLoginView(LoginView):
         if request.user.is_authenticated:
             return redirect('/')
         return super().dispatch(request, *args, **kwargs)
+    def form_valid(self, form):
+       messages.success(self.request, "Успешная авторизация!")
+       return super().form_valid(form)
 
 class CustomAuthToken(ObtainAuthToken):
 
