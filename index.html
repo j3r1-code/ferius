@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система Авторизации</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            width: 340px;
+        }
+        h2 {
+            margin-top: 0;
+            margin-bottom: 24px;
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #666;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            border-color: #4f46e5;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4f46e5;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #4338ca;
+        }
+        .btn-logout {
+            background-color: #ef4444;
+        }
+        .btn-logout:hover {
+            background-color: #dc2626;
+        }
+        .switch-mode {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #666;
+        }
+        .switch-mode a {
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        #message {
+            margin-top: 16px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+        .success { background-color: #d1fae5; color: #065f46; border: 1px solid #a3e635; }
+        .error { background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+        .hidden { display: none !important; }
+        .profile-info {
+            text-align: left;
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .profile-info p {
+            margin: 8px 0;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- Сообщения -->
+        <div id="message"></div>
+
+        <!-- ФОРМА ВХОДА -->
+        <div id="loginBlock">
+            <h2>Авторизация</h2>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="loginUsername">Имя пользователя</label>
+                    <input type="text" id="loginUsername" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <button type="submit">Войти</button>
+            </form>
+            <div class="switch-mode">
+                Нет аккаунта? <a href="#" onclick="showBlock('registerBlock')">Зарегистрироваться</a>
+            </div>
+        </div>
+
+        <!-- ФОРМА РЕГИСТРАЦИИ -->
+        <div id="registerBlock" class="hidden">
+            <h2>Регистрация</h2>
+            <form id="registerForm">
+                <div class="input-group">
+                    <label for="regUsername">Имя пользователя *</label>
+                    <input type="text" id="regUsername" required>
+                </div>
+                <div class="input-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail">
+                </div>
+                <div class="input-group">
+                    <label for="regPassword">Пароль *</label>
+                    <input type="password" id="regPassword" required>
+                </div>
+                <button type="submit">Создать аккаунт</button>
+            </form>
+            <div class="switch-mode">
+                Уже есть аккаунт? <a href="#" onclick="showBlock('loginBlock')">Войти</a>
+            </div>
+        </div>
+
+        <!-- ЛИЧНЫЙ КАБИНЕТ -->
+        <div id="profileBlock" class="hidden">
+            <h2>Личный кабинет</h2>
+            <div class="profile-info">
+                <p><strong>Пользователь:</strong> <span id="profUser"></span></p>
+                <p><strong>Email:</strong> <span id="profEmail">не указан</span></p>
+                <p><strong>Дата регистрации:</strong> <span id="profDate"></span></p>
+            </div>
+            <button class="btn-logout" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api/';
+
+        function showMessage(text, isSuccess) {
+            const msg = document.getElementById('message');
+            msg.style.display = 'block';
+            msg.className = isSuccess ? 'success' : 'error';
+            msg.textContent = text;
+        }
+
+        function clearMessage() {
+            const msg = document.getElementById('message');
+            msg.style.display = 'none';
+        }
+
+        function showBlock(blockId) {
+            clearMessage();
+            ['loginBlock', 'registerBlock', 'profileBlock'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(blockId).classList.remove('hidden');
+        }
+
+        // Авторизация
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const res = await fetch(API_URL + 'login/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    loadProfile();
+                } else {
+                    showMessage(data.message || 'Ошибка входа', false);
+                }
+            } catch (err) {
+                showMessage('Сервер не отвечает', false);
+            }
+        });
+
+        // Регистрация
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                const res = await fetch(API_URL + 'register/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password }),
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    loadProfile();
+                } else {
+                    showMessage(data.message || 'Ошибка регистрации', false);
+                }
+            } catch (err) {
+                showMessage('Сервер не отвечает', false);
+            }
+        });
+
+        // Загрузка личного кабинета
+        async function loadProfile() {
+            try {
+                const res = await fetch(API_URL + 'profile/', { credentials: 'include' });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('profUser').textContent = data.username;
+                    document.getElementById('profEmail').textContent = data.email || 'Не указан';
+                    document.getElementById('profDate').textContent = data.date_joined;
+                    showBlock('profileBlock');
+                    showMessage(`Добро пожаловать, ${data.username}!`, true);
+                } else {
+                    showBlock('loginBlock');
+                }
+            } catch (err) {
+                showBlock('loginBlock');
+            }
+        }
+
+        // Выход
+        async function logout() {
+            await fetch(API_URL + 'logout/', { method: 'POST', credentials: 'include' });
+            showBlock('loginBlock');
+            showMessage('Вы вышли из системы', true);
+        }
+
+        // Проверяем авторизацию при открытии страницы
+        loadProfile();
+    </script>
+</body>
+</html>

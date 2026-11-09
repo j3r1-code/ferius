@@ -1,93 +1,78 @@
-from api.models import UserProfile
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
-from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth.views import LoginView
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.contrib import messages
+from rest_framework import status
+from rest_framework.authentication import SessionAuthentication
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 
+# Класс, который отключает проверку CSRF для DRF
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return  # Ничего не проверяем, пропускаем запрос
 
-@login_required(login_url='/login/')
-def profile_view(request):
-    return render(request, 'auth_app/profile.html')
-
-
-class CustomLoginView(LoginView):
-    template_name = 'auth_app/login.html'
+# Авторизация
+class PureApiLoginView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
     
-    def dispatch(self, request, *args, **kwargs):
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return Response({
+                "status": "success",
+                "message": "Успешная авторизация!",
+                "username": user.username,
+                "email": user.email
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "status": "error",
+                "message": "Неверный логин или пароль"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+# Регистрация
+class RegisterView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
+    
+    def post(self, request):
+        username = request.data.get('username')
+        email = request.data.get('email', '')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({"message": "Заполните все обязательные поля"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username=username).exists():
+            return Response({"message": "Пользователь с таким именем уже существует"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+        login(request, user)
+
+        return Response({
+            "status": "success",
+            "message": "Регистрация прошла успешно!",
+            "username": user.username,
+            "email": user.email
+        }, status=status.HTTP_201_CREATED)
+
+# Профиль
+class UserProfileView(APIView):
+    def get(self, request):
         if request.user.is_authenticated:
-            return redirect('/')
-        return super().dispatch(request, *args, **kwargs)
-    def form_valid(self, form):
-       messages.success(self.request, "Успешная авторизация!")
-       return super().form_valid(form)
+            return Response({
+                "username": request.user.username,
+                "email": request.user.email,
+                "date_joined": request.user.date_joined.strftime("%Y-%m-%d")
+            })
+        return Response({"message": "Не авторизован"}, status=status.HTTP_401_UNAUTHORIZED)
 
-class CustomAuthToken(ObtainAuthToken):
-
-  def post(self, request, *args, **kwargs):
-    username = request.data.get('username')
-
-    try:
-      user_obj = User.objects.get(username=username)
-    except User.DoesNotExist:
-      return Response(
-          {'status': 'denied', 'message': 'Неверный логин bkb'}, status=403
-      )
-
-    if not user_obj.is_active:
-      return Response(
-          {
-              'status': 'denied',
-              'message': (
-                  'Аккаунт заблокирован из-за превышения числа попыток входа.'
-              ),
-          },
-          status=403,
-      )
-
-    profile, _ = UserProfile.objects.get_or_create(user=user_obj)
-
-    serializer = self.serializer_class(
-        data=request.data, context={'request': request}
-    )
-
-    if not serializer.is_valid():
-      profile.failed_attempts += 1
-      profile.save()
-
-      attempts_left = 5 - profile.failed_attempts
-
-      if profile.failed_attempts >= 5:
-        user_obj.is_active = False
-        user_obj.save()
-        return Response(
-            {
-                'status': 'denied',
-                'message': (
-                    'Превышено количество попыток. Аккаунт заблокирован.'
-                ),
-            },
-            status=403,
-        )
-
-      return Response(
-          {
-              'status': 'denied',
-              'message': (
-                  f'Неверный пароль. Осталось попыток: {attempts_left}'
-              ),
-          },
-          status=403,
-      )
-
-    profile.failed_attempts = 0
-    profile.save()
-
-    user = serializer.validated_data['user']
-    token, created = Token.objects.get_or_create(user=user)
-
-    return Response({'status': 'successful', 'token': token.key}, status=200)
+# Выход
+class LogoutView(APIView):
+    authentication_classes = [CsrfExemptSessionAuthentication]
+    
+    def post(self, request):
+        logout(request)
+        return Response({"message": "Успешный выход из системы"})
