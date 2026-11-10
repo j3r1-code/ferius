@@ -85,7 +85,7 @@ DATABASES = {
         'NAME': 'ferius_db',
         'USER': 'postgres',
         'PASSWORD': '12456',
-        'HOST': '127.0.0.1',
+        'HOST': 'host.docker.internal',
         'PORT': '5432',
         
     }
@@ -127,6 +127,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'static'  # <-- Добавь эту строчку, если её нет
 
 
 # Email

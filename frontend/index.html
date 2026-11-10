@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Приватная Почта</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --border: #334155;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
+        }
+
+        header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1, h2, h3 {
+            font-weight: 600;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Авторизация и Регистрация */
+        #auth-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 15px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .form-group {
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Личный кабинет */
+        #profile-block {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .profile-info {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .profile-details p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .profile-details span {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        /* Почтовый клиент */
+        .mail-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .mail-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messages-list {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow-y: auto;
+            max-height: 300px;
+            flex: 1;
+        }
+
+        .message-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
+        }
+
+        .message-item:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .message-item.unread {
+            font-weight: bold;
+            border-left: 4px solid var(--primary);
+        }
+
+        .message-item .msg-subject {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 15px;
+        }
+
+        .message-item .msg-date {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: var(--text-color);
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .no-messages {
+            padding: 30px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🔐 SecureMail</h1>
+            <div id="header-actions"></div>
+        </header>
+
+        <div class="content">
+            <!-- Блок Авторизации и Регистрации (Единый) -->
+            <div id="auth-block">
+                <h2 id="auth-title">Вход в систему</h2>
+                
+                <div class="auth-tabs">
+                    <button class="btn" id="show-login-tab" style="background: var(--border);">Вход</button>
+                    <button class="btn" id="show-register-tab" style="background: transparent; border: 1px solid var(--border); color: var(--text-muted);">Регистрация</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" placeholder="Введите логин">
+                </div>
+
+                <div class="form-group" id="email-group" style="display: none;">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Введите email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" placeholder="Введите пароль">
+                </div>
+
+                <div id="auth-error" class="error-msg"></div>
+                <button class="btn" id="auth-action-btn" style="width: 100%; max-width: 350px;">Войти</button>
+            </div>
+
+            <!-- ЛИЧНЫЙ КАБИНЕТ -->
+            <div id="profile-block">
+                <div class="profile-info">
+                    <div class="profile-details">
+                        <h3 id="p-username">Загрузка...</h3>
+                        <p>Email: <span id="p-email">-</span></p>
+                        <p>Дата регистрации: <span id="p-date">-</span></p>
+                    </div>
+                    <button class="btn btn-danger" id="logout-btn">Выйти</button>
+                </div>
+
+                <div class="mail-section">
+                    <div class="mail-actions">
+                        <h3>Входящие сообщения</h3>
+                        <button class="btn" id="open-compose-btn">✉ Написать сообщение</button>
+                    </div>
+                    <div class="messages-list" id="messages-list">
+                        <div class="no-messages">Загрузка сообщений...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно отправки письма -->
+    <div class="modal" id="compose-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Новое сообщение</h3>
+                <button class="close-btn" id="close-compose-btn">&times;</button>
+            </div>
+            <div class="form-group" style="max-width: 100%;">
+                <label for="recipient-input">Кому (username)</label>
+                <input type="text" id="recipient-input" placeholder="Имя получателя">
+            </div>
+            <div class="form-group" style="max-width: 100%;">
+                <label for="subject-input">Тема</label>
+                <input type="text" id="subject-input" placeholder="Тема письма">
+            </div>
+            <div class="form-group" style="max-width: 100%;">
+                <label for="body-input">Текст</label>
+                <textarea id="body-input" rows="5" placeholder="Введите текст сообщения..."></textarea>
+            </div>
+            <div id="compose-error" class="error-msg"></div>
+            <button class="btn" id="send-msg-btn">Отправить</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно просмотра письма -->
+    <div class="modal" id="detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="detail-subject">Тема письма</h3>
+                <button class="close-btn" id="close-detail-btn">&times;</button>
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted);">
+                От: <span id="detail-sender" style="color: var(--text-color);"></span> | 
+                Дата: <span id="detail-date" style="color: var(--text-color);"></span>
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--border);">
+            <div id="detail-body" style="word-break: break-word; min-height: 100px; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let isLoginMode = true;
+
+            const authBlock = document.getElementById('auth-block');
+            const profileBlock = document.getElementById('profile-block');
+            const authActionBtn = document.getElementById('auth-action-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const authError = document.getElementById('auth-error');
+            
+            const showLoginTab = document.getElementById('show-login-tab');const showRegisterTab = document.getElementById('show-register-tab');
+            const authTitle = document.getElementById('auth-title');
+            const emailGroup = document.getElementById('email-group');
+            const emailInput = document.getElementById('email');
+
+            const pUsername = document.getElementById('p-username');
+            const pEmail = document.getElementById('p-email');
+            const pDate = document.getElementById('p-date');
+            const messagesList = document.getElementById('messages-list');
+
+            const composeModal = document.getElementById('compose-modal');
+            const openComposeBtn = document.getElementById('open-compose-btn');
+            const closeComposeBtn = document.getElementById('close-compose-btn');
+            const sendMsgBtn = document.getElementById('send-msg-btn');
+            const recipientInput = document.getElementById('recipient-input');
+            const subjectInput = document.getElementById('subject-input');
+            const bodyInput = document.getElementById('body-input');
+            const composeError = document.getElementById('compose-error');
+
+            const detailModal = document.getElementById('detail-modal');
+            const closeDetailBtn = document.getElementById('close-detail-btn');
+            const detailSubject = document.getElementById('detail-subject');
+            const detailSender = document.getElementById('detail-sender');
+            const detailDate = document.getElementById('detail-date');
+            const detailBody = document.getElementById('detail-body');
+
+            // Переключение Вход / Регистрация
+            showLoginTab.addEventListener('click', () => {
+                isLoginMode = true;
+                authTitle.textContent = 'Вход в систему';
+                emailGroup.style.display = 'none';
+                authActionBtn.textContent = 'Войти';
+                showLoginTab.style.background = 'var(--border)';
+                showLoginTab.style.color = 'var(--text-color)';
+                showRegisterTab.style.background = 'transparent';
+                showRegisterTab.style.color = 'var(--text-muted)';
+                authError.textContent = '';
+            });
+
+            showRegisterTab.addEventListener('click', () => {
+                isLoginMode = false;
+                authTitle.textContent = 'Регистрация аккаунта';
+                emailGroup.style.display = 'flex';
+                authActionBtn.textContent = 'Зарегистрироваться';
+                showRegisterTab.style.background = 'var(--border)';
+                showRegisterTab.style.color = 'var(--text-color)';
+                showLoginTab.style.background = 'transparent';
+                showLoginTab.style.color = 'var(--text-muted)';
+                authError.textContent = '';
+            });
+
+            // Проверка авторизации и загрузка профиля при открытии страницы
+            checkAuthAndLoad();
+
+            async function checkAuthAndLoad() {
+                try {
+                    const response = await fetch('/api/profile/', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        showProfile(data);
+                        loadMessages();
+                    } else {
+                        showAuth();
+                    }
+                } catch (err) {
+                    console.error('Ошибка соединения:', err);
+                    showAuth();
+                }
+            }
+
+            function showProfile(user) {
+                authBlock.style.display = 'none';
+                profileBlock.style.display = 'flex';
+                pUsername.textContent = user.username;
+                pEmail.textContent = user.email || 'Не указан';
+                pDate.textContent = new Date(user.date_joined).toLocaleDateString();
+            }function showAuth() {
+                profileBlock.style.display = 'none';
+                authBlock.style.display = 'flex';
+            }
+
+            // Обработка кнопки Вход / Регистрация
+            authActionBtn.addEventListener('click', async () => {
+                authError.textContent = '';
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                const email = emailInput ? emailInput.value.trim() : '';
+
+                if (!username || !password || (!isLoginMode && !email)) {
+                    authError.textContent = 'Заполните все обязательные поля';
+                    return;
+                }
+
+                const endpoint = isLoginMode ? '/api/login/' : '/api/register/';
+                const payload = isLoginMode ? { username, password } : { username, email, password };
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        if (isLoginMode) {
+                            checkAuthAndLoad();
+                        } else {
+                            alert('Регистрация прошла успешно! Теперь вы можете войти.');
+                            showLoginTab.click();
+                        }
+                    } else {
+                        const errData = await response.json().catch(() => ({}));
+                        const firstError = Object.values(errData)[0];
+                        authError.textContent = Array.isArray(firstError) ? firstError[0] : (errData.detail || 'Ошибка при запросе');
+                    }
+                } catch (err) {
+                    authError.textContent = 'Ошибка сети';
+                }
+            });
+
+            // Выход из системы
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await fetch('/api/logout/', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    showAuth();
+                } catch (err) {
+                    console.error('Ошибка выхода', err);
+                }
+            });
+
+            // Загрузка списка входящих писем
+            async function loadMessages() {
+                try {
+                    const response = await fetch('/api/messages/', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const messages = await response.json();
+                        renderMessages(messages);
+                    } else {
+                        messagesList.innerHTML = '<div class="no-messages">Ошибка загрузки писем</div>';
+                    }
+                } catch (err) {
+                    messagesList.innerHTML = '<div class="no-messages">Ошибка соединения</div>';
+                }
+            }
+
+            function renderMessages(messages) {
+                if (!messages || messages.length === 0) {
+                    messagesList.innerHTML = '<div class="no-messages">Папка входящих пуста</div>';
+                    return;
+                }
+
+                messagesList.innerHTML = '';
+                messages.forEach(msg => {
+                    const item = document.createElement('div');
+                    const isUnread = msg.is_read === false || msg.read === false;
+                    item.className = `message-item ${isUnread ? 'unread' : ''}`;
+                    
+                    const senderName = msg.sender_username || msg.sender || 'Неизвестно';
+                    const dateStr = msg.timestamp || msg.created_at ? new Date(msg.timestamp || msg.created_at).toLocaleString() : '';
+
+                    item.innerHTML = `
+                        <div class="msg-subject"><b>${senderName}:</b> ${msg.subject || 'Без темы'}</div>
+                        <div class="msg-date">${dateStr}</div>
+                    `;
+
+                    item.addEventListener('click', () => {
+                        openMessageDetail(msg.id);
+                    });
+
+                    messagesList.appendChild(item);
+                });
+            }
+
+            // Открытие детального просмотра письма
+            async function openMessageDetail(id) {
+                try {
+                    const response = await fetch(`/api/messages/${id}/`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const msg = await response.json();
+                        detailSubject.textContent = msg.subject || 'Без темы';
+                        detailSender.textContent = msg.sender_username || msg.sender || 'Неизвестно';
+                        detailDate.textContent = msg.timestamp || msg.created_at ? new Date(msg.timestamp || msg.created_at).toLocaleString() : '';
+                        detailBody.textContent = msg.body || '';
+                        
+                        detailModal.style.display = 'flex';
+                        loadMessages();
+                    }
+                } catch (err) {
+                    console.error('Ошибка при загрузке деталей письма', err);
+                }
+            }
+
+            // Управление модальным окном отправки
+            openComposeBtn.addEventListener('click', () => {
+                composeError.textContent = '';
+                recipientInput.value = '';
+                subjectInput.value = '';
+                bodyInput.value = '';
+                composeModal.style.display = 'flex';
+            });
+
+            closeComposeBtn.addEventListener('click', () => {
+                composeModal.style.display = 'none';
+            });
+
+            closeDetailBtn.addEventListener('click', () => {
+                detailModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (e) => {
+                if (e.target === composeModal) composeModal.style.display = 'none';
+                if (e.target === detailModal) detailModal.style.display = 'none';
+            });
+
+            // Отправка нового сообщения
+            sendMsgBtn.addEventListener('click', async () => {
+                composeError.textContent = '';
+                const recipient_to_send = recipientInput.value.trim();
+                const subject = subjectInput.value.trim();
+                const body = bodyInput.value.trim();
+
+                if (!recipient_to_send || !subject || !body) {
+                    composeError.textContent = 'Пожалуйста, заполните все поля';
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/messages/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ recipient_to_send, subject, body })
+                    });
+
+                    if (response.status === 201) {
+                        recipientInput.value = '';
+                        subjectInput.value = '';
+                        bodyInput.value = '';
+                        composeModal.style.display = 'none';
+                        loadMessages();
+                    } else {
+                        const errData = await response.json().catch(() => ({}));
+                        composeError.textContent = errData.detail || 'Ошибка при отправке сообщения';
+                    }
+                } catch (err) {
+                    composeError.textContent = 'Ошибка сети при отправке';
+                }
+            });});
+    </script>
+</body>
+</html>

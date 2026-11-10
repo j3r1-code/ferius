@@ -1,3 +1,19 @@
 services:
-  web: { build: '.', command: 'python manage.py runserver 0.0.0.0:8000', volumes: ['.:/app'], ports: ['8000:8000'], environment: ['PYTHONUNBUFFERED=1'] }
-  
+  web:
+    build: '.'
+    command: 'python manage.py runserver 0.0.0.0:8000'
+    volumes:
+      - '.:/app'
+    environment:
+      - 'PYTHONUNBUFFERED=1'
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - '80:80'
+    volumes:
+      - './nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
+      - './static:/app/static'
+      - './frontend:/app/frontend'
+    depends_on:
+      - web
